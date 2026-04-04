@@ -45,7 +45,7 @@ if __cython:
     __extkwargs = {
         "language": "c++",
         # TODO: needed for cython 3.0
-        # "define_macros": [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
+        "define_macros": [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
     }
 else:
     __suffix = "cpp"
@@ -58,7 +58,7 @@ __extensions = [
             "centrosome/_propagate.{}".format("c" if __suffix == "cpp" else __suffix)
         ],
         # TODO: needed for cython 3.0
-        # define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")] if __suffix == "pyx" else None,
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")] if __suffix == "pyx" else None,
         include_dirs=["centrosome/include", numpy.get_include()],
     )
 ]
@@ -111,9 +111,10 @@ setuptools.setup(
     install_requires=[
         "deprecation",
         "numpy>=1.18.2",
-        "pillow>=7.1.0,<12",
+        "pillow>=7.1.0,<12.2.1",
         "scikit-image>=0.17.2,<1",
         "scipy>=1.4.1,!=1.11.0,<2",
+        "six",
     ],
     tests_require=[
         "pytest",

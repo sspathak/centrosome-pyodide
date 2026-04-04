@@ -3,7 +3,7 @@ authors = ["Nodar Gogoberidze <gnodar01@gmail.com>"]
 channels = ["conda-forge"]
 description = "Dev environment for centrosome"
 name = "centrosome"
-platforms = ["osx-64"]
+platforms = ["osx-64", "osx-arm64"]
 
 [tasks]
 build = "python -m build"
@@ -11,13 +11,36 @@ tag = "$PIXI_PROJECT_ROOT/scripts/tag.sh"
 retrieve = "$PIXI_PROJECT_ROOT/scripts/download_artifacts.sh"
 publish = "twine upload dist/*"
 
+build-wasm = """
+docker run --rm -v $PIXI_PROJECT_ROOT:/src -w /src \
+ghcr.io/pyodide/pyodide-env:20260120-chrome145-firefox146-py313 \
+bash -c "export PATH=\\"\\$PATH:\\$HOME/.local/bin\\" && pip install pyodide-build build cython numpy && pyodide build"
+"""
+
+# Notice the 'cd tests && ../.venv-wasm/bin/pytest' at the very end
+test-wasm = """
+docker run --rm -v $PIXI_PROJECT_ROOT:/src -w /src \
+ghcr.io/pyodide/pyodide-env:20260120-chrome145-firefox146-py313 \
+bash -c "export PATH=\\"\\$PATH:\\$HOME/.local/bin\\" && pip install pyodide-build pytest && rm -rf .venv-wasm && pyodide venv .venv-wasm && .venv-wasm/bin/pip install pytest && .venv-wasm/bin/pip install dist/centrosome-*.whl --force-reinstall && cd tests && ../.venv-wasm/bin/pytest"
+"""
+
 [pypi-dependencies]
 centrosome = { path = ".", extras = ["dev", "test"], editable = true }
 setuptools = ">=75.6.0, <76"
 build = ">=1.2.2.post1, <2"
 twine = ">=6.0.1, <7"
+pyodide-build = "*"
 
 [dependencies]
-python = "3.9.*"
-cython = "<3.0"
-numpy = "*"
+python = "3.12.*"
+cython = ">=3.0.0"
+numpy = ">=2.4.3,<3"
+pytest = ">=9.0.2,<10"
+c-compiler = ">=1.11.0,<2"
+cxx-compiler = ">=1.11.0,<2"
+scikit-image = ">=0.26.0,<0.27"
+scipy = ">=1.17.1,<2"
+pillow = ">=12.2.0,<13"
+deprecation = ">=2.1.0,<3"
+nodejs = ">=25.8.2,<25.9"
+six = "*"
