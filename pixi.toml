@@ -3,7 +3,7 @@ authors = ["Nodar Gogoberidze <gnodar01@gmail.com>"]
 channels = ["conda-forge"]
 description = "Dev environment for centrosome"
 name = "centrosome"
-platforms = ["osx-64", "osx-arm64"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 
 [tasks]
 build = "python -m build"
