@@ -24,21 +24,18 @@ jobs:
       - name: Build WebAssembly Wheel
         run: pixi run build-wasm
 
+      - name: Test WebAssembly Wheel
+        # Critical: Test BEFORE duplicating the wheel to avoid pip conflicts
+        run: pixi run test-wasm
+
       - name: Generate Forced 4_0_9 Tag
         run: |
-          # Reclaim ownership from the Docker root user
           sudo chown -R $USER:$USER dist
-          
           cd dist
           WHEEL=$(ls *.whl | grep "pyemscripten" | head -n 1)
           if [ -n "$WHEEL" ]; then
-            # Replaces modern pyemscripten tag with legacy emscripten_4_0_9
             FORCED_WHEEL=$(echo $WHEEL | sed 's/pyemscripten_[0-9]\{4\}_[0-9]/emscripten_4_0_9/')
             cp "$WHEEL" "$FORCED_WHEEL"
-            echo "Successfully created legacy tagged wheel: $FORCED_WHEEL"
-          else
-            echo "No pyemscripten wheel found to rename."
-            ls -la
           fi
         
       - name: Store Wasm artifact
