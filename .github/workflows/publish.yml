@@ -7,6 +7,68 @@ on:
   workflow_dispatch:
 
 jobs:
+  build-native-wheels:
+    strategy:
+      max-parallel: 4
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-14, macos-15-intel]
+        python_version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        include:
+          - os: ubuntu-latest
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux_2_28
+          - os: windows-latest
+            platform_id: win_amd64
+          - os: macos-15-intel
+            platform_id: macosx_x86_64
+          - os: macos-14
+            platform_id: macosx_arm64
+          - python_version: '3.9'
+            python: 39
+          - python_version: '3.10'
+            python: 310
+          - python_version: '3.11'
+            python: 311
+          - python_version: '3.12'
+            python: 312
+          - python_version: '3.13'
+            python: 313
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Python ${{ matrix.python_version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python_version }}
+
+    - name: Install cibuildwheel
+      # A single modern cibuildwheel version supports all Python versions natively
+      run: python -m pip install "cibuildwheel>=2.20.0"
+
+    - name: Build wheels
+      run: python -m cibuildwheel --output-dir wheelhouse
+      env:
+        CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
+        CIBW_ARCHS: all
+        CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
+        CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
+        # Ensure Cython 3 and Numpy 2 are present in the isolated build container
+        CIBW_BEFORE_BUILD: pip install "cython>=3.0.0" "numpy>=2.0.0" setuptools
+        # Optional but recommended: Verify the wheel works before publishing
+        CIBW_TEST_REQUIRES: pytest
+        CIBW_TEST_COMMAND: pytest {project}/tests
+
+    - name: Store artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: cibw-wheels-cp${{ matrix.python }}-${{ matrix.platform_id }}
+        path: ./wheelhouse/*.whl
+
+  # New Job: Build the WebAssembly artifact for Pyodide
   build-wasm-wheel:
     runs-on: ubuntu-latest
     steps:
